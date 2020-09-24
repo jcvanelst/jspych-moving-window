@@ -3,17 +3,82 @@
   <head>
     <script src="jspsych/jspsych.js"></script>
     <script src="jspsych-moving-window.js"></script>
+    <script src="jspsych/plugins/jspsych-html-button-response.js"></script>
+    <script src="jspsych/plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="js/stimuli.js"></script>
     <link rel="stylesheet" href="jspsych/css/jspsych.css">
   </head>
   <body></body>
   <script>
-    var timeline = [];
 
-    var trial = {
+    var timeline = [];
+    //from js/stimuli.js
+    var pract = practiceItems;
+
+    var presentStory = {
       type: 'moving-window',
-      words: "The dog chased the car but the car stood still so well, we had to redesign the layout of the trial and make a bunch of handy-dandy trial info shizzle js blocks. I wish there was a tool to make json objects from csv files!. O, wait... it's already made by MaartenUni! StillI wonder what this will look like, layout-wise..."
+      words: jsPsych.timelineVariable('words')
     }
-    timeline.push(trial);
+
+    var presentQuestion = {
+    type: 'html-button-response',
+    stimulus: jsPsych.timelineVariable('question'),
+    choices: jsPsych.timelineVariable('choices'),
+    button_html: '<button class="jspsych-btn">%choice%</button>',
+    prompt: "<p>Choose somthing...</p>",
+    trial_duration: 10000,
+    data: {
+      condition: jsPsych.timelineVariable('condition'),
+      trial_part: 'presentQuestions',
+      task_part: jsPsych.timelineVariable('part'),
+      correct_response : jsPsych.timelineVariable('correct')
+    },
+    on_finish: function(data) {
+        var acc = false;
+        var used_button = data.button_pressed;
+        var given_response = jsPsych.timelineVariable('choices')[used_button];
+
+        if (data.correct_response == data.button_pressed) {
+            acc = true;
+        }
+
+        data.accuracy = acc;
+        console.log(data.accuracy)
+      }
+    }; 
+
+    var presentFeedback = {
+      type: 'html-keyboard-response',
+      stimulus: function() {
+        var feedback_text = '<span style="color:red;font-size:30px;">Incorrect.</span>'
+        var last_resp_acc = jsPsych.data.getLastTrialData().values()[0].accuracy;
+        if (last_resp_acc == true) {
+            feedback_text = '<span style="color:green;font-size:30px;">Correct!</span>'
+        }
+        return feedback_text;
+      },
+      choices: jsPsych.NO_KEYS,
+      trial_duration: 1000
+    };
+
+    var practiceProcedure = {
+      timeline: [presentStory, presentQuestion, presentFeedback],
+      timeline_variables: pract,
+      randomize_order: true
+    };
+
+    timeline.push(practiceProcedure);
+
+
+
+
+
+    // var trial = {
+    //   type: 'moving-window',
+    //   words: "The dog chased the car but the car stood still so well, we had to redesign the layout of the trial and make a bunch of handy-dandy trial info shizzle js blocks. I wish there was a tool to make json objects from csv files!. O, wait... it's already made by MaartenUni! Still, I wonder what this will look like, layout-wise..."
+    // }
+    // timeline.push(trial);
+
 
     jsPsych.init({
       timeline: timeline,
